@@ -1,0 +1,417 @@
+#include <windows.h>
+#include <iostream>
+#include <chrono>
+#include <conio.h>
+#include <stdlib.h>
+#include <time.h>
+
+bool isGamePlayed = false;
+bool isProgramOpen = false;
+
+bool spaceClicked = false;
+
+unsigned int programLoopInc = 1;
+bool gameStatus = false; //false = lose, true = win
+short int ringPosY = 6;
+const short int ringPosX = 3;
+
+short int pipeHeight = 0;;
+short int score = 0;
+short int best = 0;
+short int speed = 1;
+short int realspeed = 3;
+
+const short int screenHeight = 12;
+const short int screenWidth = 50;
+const short int frameExtend = 3;
+unsigned char Frame[screenHeight][screenWidth+frameExtend];
+
+void StandardFrame()
+{ 
+	for (short int i = 1; i < screenHeight; i++)
+	{
+		for (short int j = 1; j < screenWidth+frameExtend-1; j++)
+		{
+			Frame[i][j] = ' '; 
+		}
+		Frame[i][0] = '|';
+		Frame[i][(screenWidth-1)] = '|';
+	}
+	for (short int i = 0; i < screenWidth; i++)
+	{
+		Frame[0][i] = '_';
+	}
+	for (short int i = 1; i < screenWidth - 1; i++)
+	{
+		Frame[screenHeight - 1][i] = '-';
+	}
+}
+
+void PipeSpawn()
+{
+	pipeHeight = rand() % 8 + 1;
+
+	if (pipeHeight > 1)
+	{
+		for (short int i = 1; i < pipeHeight; i++)
+		{
+			Frame[i][screenWidth] = (char)219u;
+			Frame[i][screenWidth + 1] = (char)219u;
+			Frame[i][screenWidth + 2] = (char)219u;
+		}
+	}
+
+	pipeHeight += 3;
+
+	if (pipeHeight < 11)
+	{
+		for (short int i = pipeHeight; i < screenHeight; i++)
+		{
+			Frame[i][screenWidth] = (char)219u;
+			Frame[i][screenWidth + 1] = (char)219u;
+			Frame[i][screenWidth + 2] = (char)219u;
+		}
+	}
+}
+
+void ArrayRefresh()
+{
+	Frame[ringPosY][ringPosX] = ' ';
+	for (short int i = 1; i < screenHeight-1; i++)
+	{
+		Frame[i][1] = ' ';
+	}
+
+	for (short int j = 2; j < screenWidth - 2; j++)
+	{
+		for (short int i = 1; i < screenHeight - 1; i++)
+		{
+			Frame[i][j] = Frame[i][j + 1];
+		}
+	}
+
+	for (short int i = 1; i < screenHeight - 1; i++)
+	{
+		Frame[i][screenWidth - 2] = Frame[i][screenWidth];
+	}
+
+	for (short int j = screenWidth; j < screenWidth + frameExtend - 1; j++)
+	{
+		for (short int i = 1; i < screenHeight - 1; i++)
+		{
+			Frame[i][j] = Frame[i][j + 1];
+		}
+	}
+
+	for (short int i = 1; i < screenHeight - 1; i++)
+	{
+		Frame[i][screenWidth+frameExtend-1] = ' ';
+	}
+
+	if (Frame[ringPosY][ringPosX] != ' ')
+	{
+		isGamePlayed = false;
+	}
+	Frame[ringPosY][ringPosX] = 'o';
+}
+
+void RingMovement()
+{
+	Frame[ringPosY][ringPosX] = ' ';
+
+	if (ringPosY-2 < 1)
+	{
+		ringPosY = 1;
+	}
+	else
+	{
+		ringPosY -= 2;
+	}
+	Sleep(1);
+
+}
+
+void Scores()
+{
+	if (score < 10)
+	{
+		std::cout << "     Score: 00" << score << "     ";
+	}
+	else if (score < 100)
+	{
+		std::cout << "     Score: 0" << score << "     ";
+	}
+	else
+	{
+		std::cout << "     Score: " << score << "     ";
+	}
+
+	std::cout << " Speed: " << speed << "x ";
+
+	if (best < 10)
+	{
+		std::cout << "     Best: 00" << best << "     ";
+	}
+	else if (best < 100)
+	{
+		std::cout << "     Best: 0" << best << "     ";
+	}
+	else
+	{
+		std::cout << "     Best: " << best << "     ";
+	}
+	std::cout << "\n";
+
+}
+
+void FrameOut()
+{
+	system("cls");
+
+	Scores();
+
+	for (short int i = 0; i < screenHeight; i++)
+	{
+		for (short int j = 0; j < screenWidth; j++)
+		{
+			std::cout << Frame[i][j];
+		}
+		std::cout << "\n";
+	}
+}
+
+void StartingProgram()
+{
+	StandardFrame();
+	PipeSpawn();
+	score = 0;
+	programLoopInc = 1;
+	ringPosY = pipeHeight-3;
+	for (short int i = 0; i < 80; i++)
+	{
+		ArrayRefresh();
+	}
+}
+
+void ProgramLoop()
+{
+	isGamePlayed = true;
+	while (isGamePlayed)
+	{
+		if (score >= 999){isGamePlayed = false;}
+
+		if (spaceClicked == false)
+		{
+			if (GetKeyState(VK_SPACE) & 0x2000)
+			{
+				spaceClicked = true;
+				RingMovement();
+			}
+		}
+
+		if (GetKeyState(VK_SPACE) & 0x2000) {}
+		else
+		{
+			spaceClicked = false;
+		}
+			
+
+		if (programLoopInc % 20 == 0)
+		{
+			ArrayRefresh();
+			FrameOut();
+		}
+		if (programLoopInc % 300 == 0)
+		{
+			PipeSpawn();
+		}
+		if (programLoopInc > 1000)
+		{
+			if (programLoopInc % 300 == 0)
+			{
+				score++;
+			}
+		}
+
+		if (programLoopInc % 30 == 0)
+		{
+			Frame[ringPosY][ringPosX] = ' ';
+			if (ringPosY + 1 > 10)
+			{
+				ringPosY = 10;
+			}
+			else
+			{
+				ringPosY += 1;
+			}
+		}
+
+		if (score > 20)
+		{
+			realspeed = 2;
+			speed = 2;
+		}
+
+		if (score > 50)
+		{
+			realspeed = 1;
+			speed = 3;
+		}
+
+		Sleep(realspeed);
+		programLoopInc++;
+	}
+}
+
+void Intro()
+{
+	for (short int i = 1; i < screenHeight - 1; i++)
+	{
+		Frame[i][3] = ' ';
+	}
+	Frame[5][18] = 'F';
+	Frame[5][19] = 'l';
+	Frame[5][20] = 'a';
+	Frame[5][21] = 'p';
+	Frame[5][22] = 'p';
+	Frame[5][23] = 'y';
+	Frame[5][24] = ' ';
+	Frame[5][25] = 'R';
+	Frame[5][26] = 'i';
+	Frame[5][27] = 'n';
+	Frame[5][28] = 'g';
+
+	Frame[6][14] = 'P';
+	Frame[6][15] = 'r';
+	Frame[6][16] = 'e';
+	Frame[6][17] = 's';	
+	Frame[6][18] = 's';
+	Frame[6][19] = ' ';
+	Frame[6][20] = 'a';
+	Frame[6][21] = 'n';
+	Frame[6][22] = 'y';
+	Frame[6][23] = ' ';
+	Frame[6][24] = 'k';
+	Frame[6][25] = 'e';
+	Frame[6][26] = 'y';
+	Frame[6][27] = ' ';
+	Frame[6][28] = 't';
+	Frame[6][29] = 'o';
+	Frame[6][30] = ' ';
+	Frame[6][31] = 's';	
+	Frame[6][32] = 't';
+	Frame[6][33] = 'a';
+	Frame[6][34] = 'r';
+	Frame[6][35] = 't';
+
+	ringPosY = 1;
+
+	FrameOut();
+
+	_getch();
+
+	for (short int i = 0; i < 35; i++)
+	{
+		ringPosY = 1;
+		ArrayRefresh();
+		FrameOut();
+		Sleep(20);
+		system("clr");
+	}
+	programLoopInc = 250;
+
+}
+
+void Outro()
+{
+	for (short int a = 0; a < screenHeight; a++)
+	{
+		Scores();
+		for (short int i = 0; i < screenHeight-a; i++)
+		{
+			for (short int j = 0; j < screenWidth; j++)
+			{
+				std::cout << Frame[i][j];
+			}
+			std::cout << "\n";
+		}
+		Sleep(20);
+		system("cls");
+	}
+}
+
+void GameResult()
+{
+	if (gameStatus == true)
+	{
+		std::cout << "You won!!!";
+	}
+	else
+	{
+		std::cout << "You lost!\n";
+		if (score > best)
+		{
+			best = score;
+			std::cout << "You beat your best score and now it is: " << best << std::endl;
+		}
+		else if (score == best)
+		{
+			std::cout << "You tied your best score which is: " << best << std::endl;
+		}
+		else
+		{
+			int difference = best - score;
+			std::cout << "Your score was " << score << " which was " << difference << " points away from your best which is " << best << std::endl;
+		}
+	}
+}
+
+int main()
+{
+	isProgramOpen = true;
+	srand(time(NULL));
+
+	while (isProgramOpen)
+	{
+
+		isGamePlayed = true;
+		StartingProgram();
+
+		Sleep(500);
+		Intro();
+
+		system("cls");
+
+		ProgramLoop();
+
+		system("cls");
+
+		Outro();	
+
+		GameResult();
+
+		std::cout << "Again? (Use arrows and then enter)\n";
+		std::cout << "[Yes] /  No";
+		while ((GetKeyState(VK_RETURN) & 0x0D00)==0)
+		{
+			if (GetKeyState(VK_LEFT) & 0x2500)
+			{
+				system("cls");
+				GameResult();
+				std::cout << "Again? (Use arrows and then enter)\n";
+				std::cout << "[Yes] /  No ";
+				isGamePlayed = true;
+				isProgramOpen = true;
+			}
+			else if (GetKeyState(VK_RIGHT) & 0x2600)
+			{
+				system("cls");
+				GameResult();
+				std::cout << "Again? (Use arrows and then enter)\n";
+				std::cout << " Yes  / [No]";
+				isProgramOpen = false;
+			}
+		}
+		Sleep(100);
+	}
+}
